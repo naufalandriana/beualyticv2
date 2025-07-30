@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
-import { Package, Beaker, Globe, FileText, Save, RotateCcw, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { Package, Beaker, Globe, FileText, Save, RotateCcw, Check, AlertCircle, Eye, EyeOff, Tag } from 'lucide-react';
 import axios from 'axios';
 
 const UploadProdukPage = () => {
@@ -14,6 +14,7 @@ const UploadProdukPage = () => {
   const [formData, setFormData] = useState({
     name: '',
     brand: '',
+    category: '',
     suitable_for: '',
     alcohol_content: '',
     price: '',
@@ -27,22 +28,34 @@ const UploadProdukPage = () => {
   const [completedSections, setCompletedSections] = useState(new Set());
   const [focusedSection, setFocusedSection] = useState(null);
 
+  const categories = [
+    { value: 'cleanser', label: 'Cleanser' },
+    { value: 'eye cream', label: 'Eye Cream' },
+    { value: 'mask', label: 'Mask' },
+    { value: 'moisturizer', label: 'Moisturizer'},
+    { value: 'oil', label: 'Oil'},
+    { value: 'serum', label: 'Serum'},
+    { value: 'sunscreen', label: 'Sunscreen'},
+    { value: 'toner', label: 'toner'},
+    { value: 'treatment', label: 'Treatment'}
+  ];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     updateCompletedSections({ ...formData, [name]: value });
   };
 
-  const handleSelectChange = (value) => {
-    setFormData(prev => ({ ...prev, alcohol_content: value }));
-    updateCompletedSections({ ...formData, alcohol_content: value });
+  const handleSelectChange = (name, value) => {
+    setFormData(prev => ({ ...prev, [name]: value }));
+    updateCompletedSections({ ...formData, [name]: value });
   };
 
   const updateCompletedSections = (data) => {
     const sections = new Set();
     
     // Section 1: Info Produk
-    if (data.name && data.brand) sections.add(1);
+    if (data.name && data.brand && data.category) sections.add(1);
     
     // Section 2: Detail Tambahan
     if (data.suitable_for && data.alcohol_content && data.price) sections.add(2);
@@ -60,6 +73,7 @@ const UploadProdukPage = () => {
     setFormData({
       name: '',
       brand: '',
+      category: '',
       suitable_for: '',
       alcohol_content: '',
       price: '',
@@ -79,7 +93,7 @@ const UploadProdukPage = () => {
         price: parseInt(formData.price),
       };
 
-      const res = await axios.post('http://10.5.49.252:5000/api/productsv2', payload);
+      const res = await axios.post('http://localhost:5000/api/productsv2', payload);
       
       toast({ 
         title: 'Produk ditambahkan!', 
@@ -101,6 +115,23 @@ const UploadProdukPage = () => {
 
   const isFormValid = completedSections.size === 4;
   const progressPercentage = (completedSections.size / 4) * 100;
+
+  // ...existing code...
+  const getCategoryColor = (category) => {
+    const colors = {
+      'cleanser':    'bg-green-100 text-green-800 border-green-200',
+      'eye cream':   'bg-pink-100 text-pink-800 border-pink-200',
+      'mask':        'bg-yellow-100 text-yellow-800 border-yellow-200',
+      'moisturizer': 'bg-blue-100 text-blue-800 border-blue-200',
+      'oil':         'bg-orange-100 text-orange-800 border-orange-200',
+      'serum':       'bg-indigo-100 text-indigo-800 border-indigo-200',
+      'sunscreen':   'bg-amber-100 text-amber-800 border-amber-200',
+      'toner':       'bg-purple-100 text-purple-800 border-purple-200',
+      'treatment':   'bg-teal-100 text-teal-800 border-teal-200',
+    };
+    return colors[category] || 'bg-gray-100 text-gray-800 border-gray-200';
+  };
+  // ...existing code...
 
   return (
     <div className="min-h-screen p-4">
@@ -153,7 +184,7 @@ const UploadProdukPage = () => {
                   </div>
                   <div>
                     <CardTitle className="text-xl">Info Produk</CardTitle>
-                    <CardDescription>Nama dan brand produk kosmetik</CardDescription>
+                    <CardDescription>Nama, brand, dan kategori produk kosmetik</CardDescription>
                   </div>
                 </div>
                 {completedSections.has(1) && (
@@ -164,7 +195,7 @@ const UploadProdukPage = () => {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name" className="text-sm font-medium text-gray-700">Nama Produk</Label>
                   <Input 
@@ -188,6 +219,24 @@ const UploadProdukPage = () => {
                     className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     placeholder="Masukkan nama brand"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category" className="text-sm font-medium text-gray-700">Kategori</Label>
+                  <Select onValueChange={(value) => handleSelectChange('category', value)} value={formData.category}>
+                    <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                      <SelectValue placeholder="Pilih kategori produk" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.value} value={cat.value}>
+                          <div className="flex items-center space-x-2">
+                            <Tag className="w-4 h-4" />
+                            <span>{cat.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>
@@ -241,7 +290,7 @@ const UploadProdukPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="alcohol_content" className="text-sm font-medium text-gray-700">Alcohol Content</Label>
-                  <Select onValueChange={handleSelectChange} value={formData.alcohol_content}>
+                  <Select onValueChange={(value) => handleSelectChange('alcohol_content', value)} value={formData.alcohol_content}>
                     <SelectTrigger className="transition-all duration-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                       <SelectValue placeholder="Pilih kandungan alkohol" />
                     </SelectTrigger>
@@ -426,7 +475,14 @@ const UploadProdukPage = () => {
                       )}
                     </div>
                     <div className="space-y-3">
-                      <h3 className="text-xl font-bold text-gray-900">{formData.name}</h3>
+                      <div className="flex items-center gap-3">
+                        <h3 className="text-xl font-bold text-gray-900">{formData.name}</h3>
+                        {formData.category && (
+                          <span className={`px-2 py-1 text-xs font-medium rounded-full border ${getCategoryColor(formData.category)}`}>
+                            {formData.category}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-gray-600">Brand: {formData.brand}</p>
                       <p className="text-2xl font-bold text-green-600">Rp {parseInt(formData.price || "0").toLocaleString('id-ID')}</p>
                       <div className="text-sm text-gray-500 space-y-1">
